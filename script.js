@@ -19,8 +19,10 @@ const lbClose = $("#lbClose");
 const lbPrev = $("#lbPrev");
 const lbNext = $("#lbNext");
 
-// Form
+// Form (отправка на почту через Formspree: https://formspree.io)
 const form = $("#leadForm");
+const FORMSPREE_ID = "xwvnvnqr"; // Замените на ID формы с formspree.io (например: xjweqwke)
+const FORMSPREE_URL = `https://formspree.io/f/${FORMSPREE_ID}`;
 
 // Current year
 year.textContent = new Date().getFullYear();
@@ -135,10 +137,8 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight") showImage(currentIndex + 1);
 });
 
-// ===== Form (demo) =====
-// Сейчас форма показывает "успешно".
-// Чтобы сделать реальную отправку — можно подключить Formspree/Telegram/CRM.
-form.addEventListener("submit", (e) => {
+// ===== Form (отправка на почту через Formspree) =====
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const data = new FormData(form);
@@ -151,6 +151,29 @@ form.addEventListener("submit", (e) => {
     return;
   }
 
-  form.reset();
-  openModal(success);
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Отправка…";
+
+  try {
+    const response = await fetch(FORMSPREE_URL, {
+      method: "POST",
+      body: data,
+      headers: { Accept: "application/json" },
+    });
+
+    if (response.ok) {
+      form.reset();
+      openModal(success);
+    } else {
+      const err = await response.json();
+      alert(err.error || "Не удалось отправить заявку. Попробуйте позже или позвоните: +7 962 633-38-40");
+    }
+  } catch (err) {
+    alert("Ошибка сети. Проверьте интернет и попробуйте снова или позвоните: +7 962 633-38-40");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
+  }
 });
